@@ -73,8 +73,11 @@ func (r *Recognizer) Recognize(doc *rmtool.Document, l LanguageCode) (map[string
 
 func (r *Recognizer) recognizeDrawing(d *lines.Drawing, l LanguageCode) (Result, error) {
 	groups := make([]StrokeGroup, len(d.Layers))
+	t := int64(0)
 	for i, l := range d.Layers {
-		groups[i] = ConvertLayer(l)
+		g, tx := ConvertLayer(t, l)
+		t = tx
+		groups[i] = g
 	}
 
 	req := prepareRequest(l)
@@ -153,7 +156,11 @@ func prepareRequest(l LanguageCode) Request {
 	req := NewRequest()
 	req.Width = lines.MaxWidth
 	req.Height = lines.MaxHeight
-	req.Configuration = NewConfiguration(l, true, true, true)
+	guides := false // recommended to turn off in Offscreen usage
+	bbox := true
+	chars := false
+	words := true
+	req.Configuration = NewConfiguration(l, guides, bbox, chars, words)
 
 	return req
 }

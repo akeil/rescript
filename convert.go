@@ -8,14 +8,14 @@ import (
 )
 
 const (
-	speedFactor int64 = 200
-	strokeGap         = 500
+	speedFactor int64 = 200 * 100
+	strokeGap         = 500 * 100
 	minSpeed          = 0.01
 )
 
 // ConvertLayer convert a Layer from a reMarkable drawing to a MyScript stroke group.
-func ConvertLayer(l lines.Layer) StrokeGroup {
-	t := time.Now()
+func ConvertLayer(tOffset int64, l lines.Layer) (StrokeGroup, int64) {
+	t := tOffset
 	strokes := make([]Stroke, len(l.Strokes))
 
 	i := 0
@@ -24,7 +24,7 @@ func ConvertLayer(l lines.Layer) StrokeGroup {
 			stroke, tx := convertStroke(t, s)
 			strokes[i] = stroke
 			// add some millis to t for each new stroke
-			t = tx.Add(time.Millisecond * strokeGap)
+			t = tx + strokeGap
 			i++
 		}
 	}
@@ -32,16 +32,16 @@ func ConvertLayer(l lines.Layer) StrokeGroup {
 	return StrokeGroup{
 		Strokes:  strokes[:i],
 		PenStyle: defaultPenStyle,
-	}
+	}, t
 }
 
-func convertStroke(t time.Time, s lines.Stroke) (Stroke, time.Time) {
+func convertStroke(tOffset int64, s lines.Stroke) (Stroke, int64) {
 	size := len(s.Dots)
 	x := make([]int, size)
 	y := make([]int, size)
 	ts := make([]int64, size)
 	p := make([]float64, size)
-	ms := toMillis(t)
+	ms := tOffset
 
 	x0 := -1
 	y0 := -1
@@ -68,12 +68,12 @@ func convertStroke(t time.Time, s lines.Stroke) (Stroke, time.Time) {
 
 	return Stroke{
 		PointerType: lookupPointer(s.BrushType),
-		PointerID:   1,
+		PointerID:   singlePointerID,
 		X:           x[:i],
 		Y:           y[:i],
 		Timestamp:   ts[:i],
 		Pressure:    p[:i],
-	}, fromMillis(ms)
+	}, ms
 }
 
 func coercePressure(p float32) float64 {

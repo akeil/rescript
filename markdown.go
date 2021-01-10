@@ -7,7 +7,7 @@ import (
 	"github.com/akeil/rmtool"
 )
 
-type markdownComposer struct {}
+type markdownComposer struct{}
 
 func NewMarkdownComposer() Composer {
 	return &markdownComposer{}

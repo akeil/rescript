@@ -21,16 +21,21 @@ const (
 	defaultConversion  = "DIGITAL_EDIT"
 	defaultPenStyle    = "color: #000000; -myscript-pen-width: ;"
 	defaultResolution  = 96
+	mmPerInch          = 25.4
+	singlePointerID    = -1
 )
 
 // Request is the root element for requests against the batch enpoint.
 type Request struct {
-	Width           int           `json:"width"`
-	Height          int           `json:"height"`
-	ContentType     string        `json:"contentType"`
+	Width  int64 `json:"width"`
+	Height int64 `json:"height"`
+	// ContentType controls the "recognition type" of the MyScript API.
+	// It must be one of Text, Diagram, Math, Raw Content, Text Document
+	ContentType string `json:"contentType"`
+	// Must be DIGITAL_EDIT when the ReST API is used.
 	ConversionState string        `json:"conversionState"`
-	XDpi            int           `json:"xDPI"`
-	YDpi            int           `json:"yDPI"`
+	XDpi            int64         `json:"xDPI"`
+	YDpi            int64         `json:"yDPI"`
 	Theme           string        `json:"theme"`
 	StrokeGroups    []StrokeGroup `json:"strokeGroups"`
 	Configuration   Configuration `json:"configuration"`
@@ -48,6 +53,12 @@ func NewRequest() Request {
 }
 
 func (r Request) checksum(h hash.Hash) {
+	binary.Write(h, binary.LittleEndian, r.Width)
+	binary.Write(h, binary.LittleEndian, r.Height)
+	binary.Write(h, binary.LittleEndian, r.ConversionState)
+	binary.Write(h, binary.LittleEndian, r.ContentType)
+	binary.Write(h, binary.LittleEndian, r.XDpi)
+	binary.Write(h, binary.LittleEndian, r.YDpi)
 	r.Configuration.checksum(h)
 	for _, sg := range r.StrokeGroups {
 		sg.checksum(h)
@@ -80,6 +91,8 @@ func (s StrokeGroup) checksum(h hash.Hash) {
 //
 // It consists of a series of X,Y coordinates and their related
 // timestamps and optional pressure values.
+//
+// The Timestamp can be based on "0" as long as it increases from point to point.
 type Stroke struct {
 	ID          string      `json:"id,omitempty"`          // opt
 	PointerType PointerType `json:"pointerType,omitempty"` // opt
@@ -105,11 +118,10 @@ func NewStroke() Stroke {
 func (s Stroke) checksum(h hash.Hash) {
 	h.Write([]byte(s.PointerType))
 	for i := 0; i < len(s.X); i++ {
-		hashInt(h, s.X[i])
-		hashInt(h, s.Y[i])
-		hashFloat(h, s.Pressure[i])
-		// Timestamp is based on Now() and thus different every time
-		//binary.Write(h, binary.LittleEndian, s.Timestamp[i])
+		binary.Write(h, binary.LittleEndian, int64(s.X[i]))
+		binary.Write(h, binary.LittleEndian, int64(s.Y[i]))
+		binary.Write(h, binary.LittleEndian, s.Pressure[i])
+		binary.Write(h, binary.LittleEndian, s.Timestamp[i])
 	}
 }
 
@@ -117,57 +129,76 @@ func (s Stroke) checksum(h hash.Hash) {
 
 // Configuration is the root object for configuration options to a batch call.
 type Configuration struct {
-	Language LanguageCode         `json:"lang"`
-	Text     *TextConfiguration   `json:"text,omitempty"`
-	Export   *ExportConfiguration `json:"export,omitempty"`
+	Language   LanguageCode             `json:"lang"`
+	Text       *TextConfiguration       `json:"text,omitempty"`
+	Export     *ExportConfiguration     `json:"export,omitempty"`
+	RawContent *RawContentConfiguration `json:"raw-content,omitempty"`
 }
 
 // NewConfiguration creates a new configuration object with the given values.
-func NewConfiguration(lang LanguageCode, bbox, chars, words bool) Configuration {
+func NewConfiguration(lang LanguageCode, guides, bbox, chars, words bool) Configuration {
 	return Configuration{
-		Language: lang,
-		Text:     NewTextConfiguration(),
-		Export:   NewExportConfiguration(bbox, chars, words),
+		Language:   lang,
+		Text:       NewTextConfiguration(guides),
+		Export:     NewExportConfiguration(bbox, chars, words),
+		RawContent: NewRawContentConfiguration(),
 	}
 }
 
 func (c Configuration) checksum(h hash.Hash) {
 	h.Write([]byte(c.Language))
+	c.Text.checksum(h)
 	c.Export.checksum(h)
+	c.RawContent.checksum(h)
 }
 
 // TextConfiguration holds settings holds settings for text recognition.
 type TextConfiguration struct {
-	Guides GuidesConfiguration `json:"guides"`
-	// Margin
-	MimeTypes         []string             `json:"mimeTypes"`
-	SmartGuide        bool                 `json:"smartGuide"`
-	SmartGuideFadeout FadeoutConfiguration `json:"smartGuideFadeout"`
+	Guides        GuidesConfiguration  `json:"guides"`
+	Margin        MarginConfiguration  `json:"margin"`
+	Configuration RawTextConfiguration `json:"configuration"`
 }
 
 // NewTextConfiguration creates a default configuration.
-func NewTextConfiguration() *TextConfiguration {
+func NewTextConfiguration(guides bool) *TextConfiguration {
 	return &TextConfiguration{
-		Guides:            GuidesConfiguration{Enable: true},
-		MimeTypes:         []string{"text/plain", "application/vnd.myscript.jiix"},
-		SmartGuide:        true,
-		SmartGuideFadeout: FadeoutConfiguration{Enable: false, Duration: 10000},
+		Guides: GuidesConfiguration{Enable: guides},
+		Margin: MarginConfiguration{
+			Top:    0,
+			Left:   0,
+			Right:  0,
+			Bottom: 0,
+		},
+		Configuration: RawTextConfiguration{
+			AddLKText: true, // defult: true
+		},
 	}
+}
+
+func (t *TextConfiguration) checksum(h hash.Hash) {
+	binary.Write(h, binary.LittleEndian, t.Guides.Enable)
+	binary.Write(h, binary.LittleEndian, t.Configuration.AddLKText)
+	binary.Write(h, binary.LittleEndian, t.Margin.Top)
+	binary.Write(h, binary.LittleEndian, t.Margin.Left)
+	binary.Write(h, binary.LittleEndian, t.Margin.Right)
+	binary.Write(h, binary.LittleEndian, t.Margin.Bottom)
+}
+
+type MarginConfiguration struct {
+	Top    int32 `json:"top"`
+	Left   int32 `json:"left"`
+	Right  int32 `json:"right"`
+	Bottom int32 `json:"bottom"`
 }
 
 type GuidesConfiguration struct {
 	Enable bool `json:"enable"`
 }
 
-type FadeoutConfiguration struct {
-	Enable   bool `json:"enable"`
-	Duration int  `json:"duration"`
-}
-
 // ExportConfiguration holds settings for the API response.
 type ExportConfiguration struct {
 	Jiix            JiixConfiguration `json:"jiix"`
-	ImageResolution int               `json:"image-resolution"`
+	ImageResolution int64             `json:"image-resolution"`
 }
 
 // NewExportConfiguration creates an export config.
@@ -179,6 +210,7 @@ func NewExportConfiguration(bbox, chars, words bool) *ExportConfiguration {
 }
 
 func (e *ExportConfiguration) checksum(h hash.Hash) {
+	binary.Write(h, binary.LittleEndian, e.ImageResolution)
 	e.Jiix.checksum(h)
 }
 
@@ -188,6 +220,7 @@ func (e *ExportConfiguration) checksum(h hash.Hash) {
 type JiixConfiguration struct {
 	Strokes     bool     `json:"strokes"`
 	BoundingBox bool     `json:"bounding-box"`
+	Style       bool     `json:"style"`
 	Text        JiixText `json:"text"`
 }
 
@@ -200,8 +233,9 @@ type JiixConfiguration struct {
 // if chars is also set, the character index for each word is included.
 func NewJiixConfiguration(bbox, chars, words bool) JiixConfiguration {
 	return JiixConfiguration{
-		Strokes:     false, // not sure what this param does
+		Strokes:     true, // not sure what this param does (no effect?)
 		BoundingBox: bbox,
+		Style:       true, // not sure what this does
 		Text: JiixText{
 			Chars: chars,
 			Words: words,
@@ -210,10 +244,10 @@ func NewJiixConfiguration(bbox, chars, words bool) JiixConfiguration {
 }
 
 func (j JiixConfiguration) checksum(h hash.Hash) {
-	hashBool(h, j.Strokes)
-	hashBool(h, j.BoundingBox)
-	hashBool(h, j.Text.Chars)
-	hashBool(h, j.Text.Words)
+	binary.Write(h, binary.LittleEndian, j.Strokes)
+	binary.Write(h, binary.LittleEndian, j.BoundingBox)
+	binary.Write(h, binary.LittleEndian, j.Text.Chars)
+	binary.Write(h, binary.LittleEndian, j.Text.Words)
 }
 
 type JiixText struct {
@@ -221,16 +255,36 @@ type JiixText struct {
 	Words bool `json:"words"`
 }
 
-// cChecksum Helpers ----------------------------------------------------------
-
-func hashBool(h hash.Hash, b bool) {
-	binary.Write(h, binary.LittleEndian, b)
+type RawContentConfiguration struct {
+	Recognition RawRecognitionConfiguration `json:"recognition"`
+	Text        RawTextConfiguration        `json:"text"`
 }
 
-func hashInt(h hash.Hash, i int) {
-	binary.Write(h, binary.LittleEndian, int64(i))
+func NewRawContentConfiguration() *RawContentConfiguration {
+	return &RawContentConfiguration{
+		Recognition: RawRecognitionConfiguration{
+			Text:  true,
+			Shape: true,
+		},
+		Text: RawTextConfiguration{
+			AddLKText: true, // defult: true
+		},
+	}
 }
 
-func hashFloat(h hash.Hash, f float64) {
-	binary.Write(h, binary.LittleEndian, f)
+func (r *RawContentConfiguration) checksum(h hash.Hash) {
+	binary.Write(h, binary.LittleEndian, r.Recognition.Text)
+	binary.Write(h, binary.LittleEndian, r.Recognition.Shape)
+	binary.Write(h, binary.LittleEndian, r.Text.AddLKText)
+}
+
+type RawRecognitionConfiguration struct {
+	Text  bool `json:"text"`
+	Shape bool `json:"shape"`
+}
+
+type RawTextConfiguration struct {
+	CustomResources []string `json:"customResources,omitempty"`
+	CustomLexicon   []string `json:"customLexicon,omitempty"`
+	AddLKText       bool     `json:"addLKText"`
 }
