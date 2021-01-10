@@ -78,6 +78,8 @@ func run(name, dst, lang string) error {
 	root := rmtool.BuildTree(items)
 	root = root.Filtered(rmtool.IsDocument, rmtool.MatchName(name))
 
+	cmp := rescript.NewMarkdownComposer()
+
 	// do recognition for each matching document
 	var group errgroup.Group
 	root.Walk(func(n *rmtool.Node) error {
@@ -105,7 +107,7 @@ func run(name, dst, lang string) error {
 			}
 			defer f.Close()
 
-			err = rescript.ComposeDocument(f, doc, results)
+			err = cmp.Compose(f, doc, results)
 			if err != nil {
 				return err
 			}

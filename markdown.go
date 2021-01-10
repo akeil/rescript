@@ -7,7 +7,26 @@ import (
 	"github.com/akeil/rmtool"
 )
 
-func ComposeDocument(w io.StringWriter, doc *rmtool.Document, r map[string]Result) error {
+type markdownComposer struct {}
+
+func NewMarkdownComposer() Composer {
+	return &markdownComposer{}
+}
+
+func (m *markdownComposer) Compose(w io.Writer, doc *rmtool.Document, r map[string]Result) error {
+	sw := stringWriter{w}
+	return composeMarkdown(sw, doc, r)
+}
+
+type stringWriter struct {
+	io.Writer
+}
+
+func (sw stringWriter) WriteString(s string) (int, error) {
+	return sw.Write([]byte(s))
+}
+
+func composeMarkdown(w io.StringWriter, doc *rmtool.Document, r map[string]Result) error {
 	var err error
 
 	// TODO: we might write a yaml frontmatter here
