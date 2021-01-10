@@ -21,7 +21,6 @@ const (
 	defaultConversion  = "DIGITAL_EDIT"
 	defaultPenStyle    = "color: #000000; -myscript-pen-width: ;"
 	defaultResolution  = 96
-	mmPerInch          = 25.4
 	singlePointerID    = -1
 )
 
