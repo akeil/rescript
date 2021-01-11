@@ -101,7 +101,10 @@ func (t *Token) IsNewline() bool {
 
 // StartsUpper tells if this token starts with an uppercase letter
 func (t *Token) StartsUpper() bool {
-	return t.isSingle() && unicode.IsUpper(t.runes[0])
+	if len(t.runes) == 0 {
+		return false
+	}
+	return unicode.IsUpper(t.runes[0])
 }
 
 func (t *Token) IsPunctuation() bool {
