@@ -7,5 +7,5 @@ import (
 )
 
 type Composer interface {
-	Compose(w io.Writer, doc *rmtool.Document, r map[string]Result) error
+	Compose(w io.Writer, doc *rmtool.Document, r map[string][]*Token) error
 }
