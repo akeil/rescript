@@ -1,8 +1,8 @@
 package main
 
 import (
-	//	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,6 +20,7 @@ const (
 	checkmark = "\u2713"
 	crossmark = "\u2717"
 	ellipsis  = "\u2026"
+	dstStdout = "-"
 )
 
 var langs = map[string]rescript.LanguageCode{
@@ -100,14 +101,22 @@ func run(name, dst, lang, format string) error {
 				return err
 			}
 
-			path := filepath.Join(dst, doc.Name()+"."+format)
-			f, err := os.Create(path)
-			if err != nil {
-				return nil
+			var w io.Writer
+			var path string
+			if dst == dstStdout {
+				w = os.Stdout
+				path = "STDOUT"
+			} else {
+				path = filepath.Join(dst, doc.Name()+"."+format)
+				f, err := os.Create(path)
+				if err != nil {
+					return nil
+				}
+				defer f.Close()
+				w = f
 			}
-			defer f.Close()
 
-			err = cmp(f, doc, results)
+			err = cmp(w, doc, results)
 			if err != nil {
 				return err
 			}
