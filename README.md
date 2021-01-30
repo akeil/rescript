@@ -5,12 +5,12 @@
 This is a small tool to extract text from handwritten notes created on the
 [reMarkable](https://remarkable.com/) tablet.
 
-it uses the reMarkable cloud API
-and the [MyScript](https://myscript.com/) text recognition ReST API.
+It uses the reMarkable cloud API
+and the [MyScript](https://myscript.com/) handwriting recognition ReST API.
 
 ## Configuration and Setup
 You need to enable "cloud sync" for your remarkable tablet
-to make notes available for this tool.
+to make your notes available for this tool.
 
 When first run, *reScript* will ask for a "one time code"
 which can be obtained at https://my.remarkable.com/:
@@ -37,7 +37,7 @@ authentication token for the reMarkable API, all downloaded notes
 and cached handwriting recognition results.
 
 ## Usage
-Only one use is supported:
+Only one use case is supported:
 
 ```
 $ rescript NAME_OF_NOTE -l LANGUAGE
@@ -47,9 +47,9 @@ $ rescript NAME_OF_NOTE -l LANGUAGE
 text. It is case-insensitive and supports partial matches.
 IF multiple notebooks match, all of them will be converted.
 
-The `LANGUAGE` must be specified and it must be one of the
+The `LANGUAGE` must be one of the
 [languages supported by MyScript](https://developer.myscript.com/docs/interactive-ink/1.4/overview/text-languages/).
-It defaults to `en`.
+The parameter is optional and defaults to `en`.
 
 The result is written to a markdown file named after the notebook
 in the current directory.
