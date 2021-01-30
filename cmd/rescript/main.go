@@ -1,8 +1,8 @@
 package main
 
 import (
-	//	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,6 +20,7 @@ const (
 	checkmark = "\u2713"
 	crossmark = "\u2717"
 	ellipsis  = "\u2026"
+	dstStdout = "-"
 )
 
 var langs = map[string]rescript.LanguageCode{
@@ -33,7 +34,7 @@ func main() {
 
 	var (
 		name   = app.Arg("name", "Name of the notebook to convert").Required().String()
-		dst    = app.Arg("dir", "Directory for output document").Default(".").String()
+		dst    = app.Flag("output", "Directory for output document, \"-\" for STDOUT").Short('o').Default(".").String()
 		format = app.Flag("format", "Output format").Short('f').Default("txt").Enum("txt", "md")
 		lang   = app.Flag("lang", "Language of the notebook").Short('l').Default("en").String()
 	)
@@ -44,11 +45,11 @@ func main() {
 
 	err := run(*name, *dst, *lang, *format)
 	if err != nil {
-		fmt.Printf("%v Error: %v\n", crossmark, err)
+		message("%v Error: %v", crossmark, err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("%v Done.\n", checkmark)
+	message("%v Done.", checkmark)
 }
 
 func run(name, dst, lang, format string) error {
@@ -88,30 +89,38 @@ func run(name, dst, lang, format string) error {
 		}
 
 		group.Go(func() error {
-			fmt.Printf("%v download notebook %q\n", ellipsis, n.Name())
+			message("%v download notebook %q", ellipsis, n.Name())
 			doc, err := rmtool.ReadDocument(r, n)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("%v recognize handwriting (%v) for %q\n", ellipsis, lang, n.Name())
+			message("%v recognize handwriting (%v) for %q", ellipsis, lang, n.Name())
 			results, err := rec.Recognize(doc, lc)
 			if err != nil {
 				return err
 			}
 
-			path := filepath.Join(dst, doc.Name()+"."+format)
-			f, err := os.Create(path)
-			if err != nil {
-				return nil
+			var w io.Writer
+			var path string
+			if dst == dstStdout {
+				w = os.Stdout
+				path = "STDOUT"
+			} else {
+				path = filepath.Join(dst, doc.Name()+"."+format)
+				f, err := os.Create(path)
+				if err != nil {
+					return nil
+				}
+				defer f.Close()
+				w = f
 			}
-			defer f.Close()
 
-			err = cmp(f, doc, results)
+			err = cmp(w, doc, results)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%v write result to %q\n", checkmark, path)
+			message("%v write result to %q", checkmark, path)
 			return nil
 		})
 		return nil
@@ -160,7 +169,7 @@ func register(s settings, c *api.Client) error {
 func readInput(msg string) (string, error) {
 	var reply string
 
-	fmt.Printf("%v: \n", msg)
+	message("%v: ", msg)
 	_, err := fmt.Scanf("%s", &reply)
 
 	return reply, err
@@ -200,6 +209,12 @@ func saveToken(path, token string) error {
 
 	_, err = f.Write([]byte(token))
 	return err
+}
+
+func message(s string, params ...interface{}) {
+	msg := fmt.Sprintf(s, params...)
+	msg = msg + "\n"
+	os.Stderr.WriteString(msg)
 }
 
 type settings struct {
