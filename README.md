@@ -40,7 +40,7 @@ and cached handwriting recognition results.
 Only one use case is supported:
 
 ```
-$ rescript NAME_OF_NOTE -l LANGUAGE
+$ rescript NAME_OF_NOTE -l LANGUAGE -f FORMAT
 ```
 
 `NAME_OF_NOTE` is the display name of the notebook you want to convert into
@@ -51,7 +51,11 @@ The `LANGUAGE` must be one of the
 [languages supported by MyScript](https://developer.myscript.com/docs/interactive-ink/1.4/overview/text-languages/).
 The parameter is optional and defaults to `en`.
 
-The result is written to a markdown file named after the notebook
+`FORMAT` specifies the output format. It is either `txt` for plain text
+or `md` for markdown.
+The parameter is optional and defaults to plain text.
+
+The result is written to a file named after the notebook
 in the current directory.
 
 **Example:**

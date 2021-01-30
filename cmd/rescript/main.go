@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/akeil/rmtool"
+	"github.com/akeil/rmtool/pkg/api"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
-	"github.com/akeil/rmtool"
-	"github.com/akeil/rmtool/pkg/api"
 
 	"github.com/akeil/rescript"
 )
@@ -32,17 +32,17 @@ func main() {
 	app.HelpFlag.Short('h')
 
 	var (
-		name = app.Arg("name", "Name of the notebook to convert").Required().String()
-		dst  = app.Arg("dir", "Directory for output document").Default(".").String()
-		// TODO: format
-		lang = app.Flag("lang", "Language of the notebook").Short('l').Default("en").String()
+		name   = app.Arg("name", "Name of the notebook to convert").Required().String()
+		dst    = app.Arg("dir", "Directory for output document").Default(".").String()
+		format = app.Flag("format", "Output format").Short('f').Default("txt").Enum("txt", "md")
+		lang   = app.Flag("lang", "Language of the notebook").Short('l').Default("en").String()
 	)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	rmtool.SetLogLevel("error")
 
-	err := run(*name, *dst, *lang)
+	err := run(*name, *dst, *lang, *format)
 	if err != nil {
 		fmt.Printf("%v Error: %v\n", crossmark, err)
 		os.Exit(1)
@@ -51,7 +51,7 @@ func main() {
 	fmt.Printf("%v Done.\n", checkmark)
 }
 
-func run(name, dst, lang string) error {
+func run(name, dst, lang, format string) error {
 	lc, ok := langs[lang]
 	if !ok {
 		return fmt.Errorf("invalid language %q", lang)
@@ -78,7 +78,7 @@ func run(name, dst, lang string) error {
 	root := rmtool.BuildTree(items)
 	root = root.Filtered(rmtool.IsDocument, rmtool.MatchName(name))
 
-	cmp := rescript.NewMarkdownComposer()
+	cmp := selectComposer(format)
 
 	// do recognition for each matching document
 	var group errgroup.Group
@@ -100,14 +100,14 @@ func run(name, dst, lang string) error {
 				return err
 			}
 
-			path := filepath.Join(dst, doc.Name()+".md")
+			path := filepath.Join(dst, doc.Name()+"."+format)
 			f, err := os.Create(path)
 			if err != nil {
 				return nil
 			}
 			defer f.Close()
 
-			err = cmp.Compose(f, doc, results)
+			err = cmp(f, doc, results)
 			if err != nil {
 				return err
 			}
@@ -164,6 +164,17 @@ func readInput(msg string) (string, error) {
 	_, err := fmt.Scanf("%s", &reply)
 
 	return reply, err
+}
+
+func selectComposer(t string) rescript.ComposeFunc {
+	switch t {
+	case "txt":
+		return rescript.NewPlaintextComposer()
+	case "md":
+		return rescript.NewMarkdownComposer()
+	default:
+		return rescript.NewPlaintextComposer()
+	}
 }
 
 func loadToken(path string) (string, error) {
