@@ -34,7 +34,7 @@ func main() {
 
 	var (
 		name   = app.Arg("name", "Name of the notebook to convert").Required().String()
-		dst    = app.Arg("dir", "Directory for output document").Default(".").String()
+		dst    = app.Flag("output", "Directory for output document, \"-\" for STDOUT").Short('o').Default(".").String()
 		format = app.Flag("format", "Output format").Short('f').Default("txt").Enum("txt", "md")
 		lang   = app.Flag("lang", "Language of the notebook").Short('l').Default("en").String()
 	)
