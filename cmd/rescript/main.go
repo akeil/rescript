@@ -78,7 +78,7 @@ func run(name, dst, lang string) error {
 	root := rmtool.BuildTree(items)
 	root = root.Filtered(rmtool.IsDocument, rmtool.MatchName(name))
 
-	cmp := rescript.NewMarkdownComposer()
+	cmp := selectComposer("txt")
 
 	// do recognition for each matching document
 	var group errgroup.Group
@@ -164,6 +164,17 @@ func readInput(msg string) (string, error) {
 	_, err := fmt.Scanf("%s", &reply)
 
 	return reply, err
+}
+
+func selectComposer(t string) rescript.Composer {
+	switch t {
+	case "txt":
+		return rescript.NewPlaintextComposer()
+	case "md":
+		return rescript.NewMarkdownComposer()
+	default:
+		return rescript.NewPlaintextComposer()
+	}
 }
 
 func loadToken(path string) (string, error) {
