@@ -18,3 +18,8 @@ or section (BBox) from a page
 
 Later
 support different backends for HWR service
+
+log output: include the language
+
+write output to text, not markdown
+alternative: result to stdout
