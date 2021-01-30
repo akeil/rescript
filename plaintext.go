@@ -8,15 +8,13 @@ import (
 	"github.com/akeil/rmtool"
 )
 
-type plaintextComposer struct{}
-
 // NewPlaintextComposer creates a new composer which creates plain text output
 // for a regicnition result.
-func NewPlaintextComposer() Composer {
-	return &plaintextComposer{}
+func NewPlaintextComposer() ComposeFunc {
+	return composePlain
 }
 
-func (p *plaintextComposer) Compose(w io.Writer, doc *rmtool.Document, r map[string][]*Token) error {
+func composePlain(w io.Writer, doc *rmtool.Document, r map[string][]*Token) error {
 	var err error
 	sw := stringWriter{w}
 
@@ -33,7 +31,7 @@ func (p *plaintextComposer) Compose(w io.Writer, doc *rmtool.Document, r map[str
 	for i, pageID := range doc.Pages() {
 		res, ok := r[pageID]
 		if ok {
-			err = p.page(sw, i, res)
+			err = plainPage(sw, i, res)
 			if err != nil {
 				return err
 			}
@@ -50,7 +48,7 @@ func (p *plaintextComposer) Compose(w io.Writer, doc *rmtool.Document, r map[str
 	return nil
 }
 
-func (p *plaintextComposer) page(sw io.StringWriter, idx int, tokens []*Token) error {
+func plainPage(sw io.StringWriter, idx int, tokens []*Token) error {
 	var err error
 
 	sw.WriteString(fmt.Sprintf("\n[Page %d]\n\n", idx+1))

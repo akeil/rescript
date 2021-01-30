@@ -107,7 +107,7 @@ func run(name, dst, lang, format string) error {
 			}
 			defer f.Close()
 
-			err = cmp.Compose(f, doc, results)
+			err = cmp(f, doc, results)
 			if err != nil {
 				return err
 			}
@@ -166,7 +166,7 @@ func readInput(msg string) (string, error) {
 	return reply, err
 }
 
-func selectComposer(t string) rescript.Composer {
+func selectComposer(t string) rescript.ComposeFunc {
 	switch t {
 	case "txt":
 		return rescript.NewPlaintextComposer()

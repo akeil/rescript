@@ -7,15 +7,9 @@ import (
 	"github.com/akeil/rmtool"
 )
 
-type markdownComposer struct{}
-
-func NewMarkdownComposer() Composer {
-	return &markdownComposer{}
-}
-
-func (m *markdownComposer) Compose(w io.Writer, doc *rmtool.Document, r map[string][]*Token) error {
-	sw := stringWriter{w}
-	return composeMarkdown(sw, doc, r)
+// NewMarkdownComposer creates a new composer which generates output in markdown format.
+func NewMarkdownComposer() ComposeFunc {
+	return composeMarkdown
 }
 
 type stringWriter struct {
@@ -26,27 +20,28 @@ func (sw stringWriter) WriteString(s string) (int, error) {
 	return sw.Write([]byte(s))
 }
 
-func composeMarkdown(w io.StringWriter, doc *rmtool.Document, r map[string][]*Token) error {
+func composeMarkdown(w io.Writer, doc *rmtool.Document, r map[string][]*Token) error {
 	var err error
+	sw := stringWriter{w}
 
 	// TODO: we might write a yaml frontmatter here
-	w.WriteString(fmt.Sprintf("# %v\n\n", doc.Name()))
+	sw.WriteString(fmt.Sprintf("# %v\n\n", doc.Name()))
 
 	for i, pageID := range doc.Pages() {
 		res, ok := r[pageID]
 		if ok {
-			err = page(w, i, res)
+			err = markdownPage(sw, i, res)
 			if err != nil {
 				return err
 			}
 			// TODO: not after the last page
-			w.WriteString("\n\n---\n\n") // thematic break after each page
+			sw.WriteString("\n\n---\n\n") // thematic break after each page
 		}
 		// TODO what should we do with pages w/o results?
 	}
 
 	// end the document with a newline
-	_, err = w.WriteString("\n")
+	_, err = sw.WriteString("\n")
 	if err != nil {
 		return err
 	}
@@ -61,7 +56,7 @@ func composeMarkdown(w io.StringWriter, doc *rmtool.Document, r map[string][]*To
 // add a newline before the *first* and after the *last* line
 // of consecutive list entries
 
-func page(w io.StringWriter, idx int, tokens []*Token) error {
+func markdownPage(w io.StringWriter, idx int, tokens []*Token) error {
 	var err error
 
 	w.WriteString(fmt.Sprintf("**Page %d**\n\n", idx+1))
