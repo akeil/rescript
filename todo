@@ -19,6 +19,4 @@ or section (BBox) from a page
 Later
 support different backends for HWR service
 
-log output: include the language
-
 alternative: result to stdout

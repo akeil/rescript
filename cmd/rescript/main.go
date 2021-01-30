@@ -94,7 +94,7 @@ func run(name, dst, lang, format string) error {
 				return err
 			}
 
-			fmt.Printf("%v recognize handwriting for %q\n", ellipsis, n.Name())
+			fmt.Printf("%v recognize handwriting (%v) for %q\n", ellipsis, lang, n.Name())
 			results, err := rec.Recognize(doc, lc)
 			if err != nil {
 				return err
@@ -111,7 +111,7 @@ func run(name, dst, lang, format string) error {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%v write %q to %q\n", checkmark, n.Name(), path)
+			fmt.Printf("%v write result to %q\n", checkmark, path)
 			return nil
 		})
 		return nil
