@@ -53,7 +53,7 @@ func (p *plaintextComposer) Compose(w io.Writer, doc *rmtool.Document, r map[str
 func (p *plaintextComposer) page(sw io.StringWriter, idx int, tokens []*Token) error {
 	var err error
 
-	sw.WriteString(fmt.Sprintf("[Page %d]\n\n", idx+1))
+	sw.WriteString(fmt.Sprintf("\n[Page %d]\n\n", idx+1))
 
 	for _, t := range tokens {
 		_, err = sw.WriteString(t.String())
