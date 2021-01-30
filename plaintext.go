@@ -23,7 +23,7 @@ func (p *plaintextComposer) Compose(w io.Writer, doc *rmtool.Document, r map[str
 	// Output the title if we have one
 	title := doc.Name()
 	if title != "" {
-		_, err = sw.WriteString(strings.ToUpper(title) + "\n\n")
+		_, err = sw.WriteString(strings.ToUpper(title) + "\n")
 		if err != nil {
 			return err
 		}
