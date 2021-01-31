@@ -14,26 +14,6 @@ func NewNode(t *Token) *Node {
 	}
 }
 
-// BuildLinkedList creates a doubly linked list from the given list of tokens.
-// Returns the TAIL (first entry) of the list.
-// TODO: unused - remove
-func BuildLinkedList(t []*Token) *Node {
-	var head *Node
-	var tail *Node
-	for _, tt := range t {
-		n := NewNode(tt)
-		if head != nil {
-			head.InsertAfter(n)
-			head = head.Next()
-		} else {
-			head = n
-			tail = n
-		}
-	}
-
-	return tail
-}
-
 // Token returns the Token for this node.
 func (n *Node) Token() *Token {
 	return n.data

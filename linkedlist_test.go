@@ -87,21 +87,6 @@ func TestBehind(t *testing.T) {
 	assert.Nil(end.Ahead(1))
 }
 
-func TestBuildList(t *testing.T) {
-	assert := assert.New(t)
-
-	tokens := []*Token{
-		NewToken("foo"),
-		NewToken("bar"),
-		NewToken("baz"),
-	}
-	start := BuildLinkedList(tokens)
-
-	assert.Equal(start.Token().String(), "foo")
-	assert.Equal(start.Next().Token().String(), "bar")
-	assert.Equal(start.Next().Next().Token().String(), "baz")
-}
-
 func sampleList() (*Node, *Node, *Node) {
 	start := NewNode(NewToken("start"))
 	middle := NewNode(NewToken("middle"))
