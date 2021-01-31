@@ -81,6 +81,8 @@ func run(name, dst, lang, format string) error {
 
 	cmp := selectComposer(format)
 
+	pipeline := rescript.BuildPipeline(rescript.Dehyphenate)
+
 	// do recognition for each matching document
 	var group errgroup.Group
 	root.Walk(func(n *rmtool.Node) error {
@@ -99,6 +101,10 @@ func run(name, dst, lang, format string) error {
 			results, err := rec.Recognize(doc, lc)
 			if err != nil {
 				return err
+			}
+
+			for k, tokens := range results {
+				results[k] = pipeline(tokens)
 			}
 
 			var w io.Writer

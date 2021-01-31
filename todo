@@ -18,3 +18,8 @@ or section (BBox) from a page
 
 Later
 support different backends for HWR service
+
+
+Add Docstrings for all public functions
+
+Implement Linked List for Tokens

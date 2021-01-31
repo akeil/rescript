@@ -124,3 +124,16 @@ func (t *Token) IsWord() bool {
 	}
 	return true
 }
+
+func (t *Token) IsDash() bool {
+	if !t.isSingle() {
+		return false
+	}
+
+	switch t.runes[0] {
+	case '-':
+		return true
+	default:
+		return false
+	}
+}
