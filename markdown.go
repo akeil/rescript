@@ -34,8 +34,6 @@ func composeMarkdown(w io.Writer, doc *rmtool.Document, r map[string]*Node) erro
 			if err != nil {
 				return err
 			}
-			// TODO: not after the last page
-			sw.WriteString("\n\n---\n\n") // thematic break after each page
 		}
 		// TODO what should we do with pages w/o results?
 	}
@@ -56,17 +54,27 @@ func composeMarkdown(w io.Writer, doc *rmtool.Document, r map[string]*Node) erro
 // add a newline before the *first* and after the *last* line
 // of consecutive list entries
 
-func markdownPage(w io.StringWriter, idx int, n *Node) error {
+func markdownPage(sw io.StringWriter, idx int, n *Node) error {
 	var err error
 
-	w.WriteString(fmt.Sprintf("**Page %d**\n\n", idx+1))
+	_, err = sw.WriteString(fmt.Sprintf("**Page %d**\n\n", idx+1))
+	if err != nil {
+		return err
+	}
 
 	for node := n; node != nil; node = node.Next() {
 		// TODO: we might attempt to "guess" markdown here,
-		_, err = w.WriteString(node.Token().String())
+		_, err = sw.WriteString(node.Token().String())
 		if err != nil {
 			return err
 		}
+	}
+
+	// thematic break after each page
+	// TODO: not after the last page
+	_, err = sw.WriteString("\n\n---\n\n")
+	if err != nil {
+		return err
 	}
 
 	return nil
