@@ -6,19 +6,30 @@ package rescript
 // If the "words" option was enabled, the liust of Words contains
 // the individual words and whitespace.
 type Result struct {
+	ID          string      `json:"id"`
+	Version     string      `json:"version"`
 	Type        string      `json:"type"`
-	BoundingBox BoundingBox `json:"bounding-box"`
 	Label       string      `json:"label"`
+	BoundingBox BoundingBox `json:"bounding-box"`
 	Words       []Word      `json:"words"`
+	Chars       []Char      `json:"chars"`
+	Linebreaks  []Linebreak `json:"linebreaks"`
 }
 
+// Word is a single recognized "word", including whitespace or punctuation.
+//
+// The recognized content is held in the `Label`; concatenating all labesl
+// gives the full text.
+// See:
+// https://developer.myscript.com/docs/interactive-ink/1.4/reference/web/jiix/#word-object
 type Word struct {
 	Label       string      `json:"label"`
-	Candidates  []string    `json:"candidates,omitempty"`
+	ReflowLabel string      `json:"reflow-label"`
 	FirstChar   int         `json:"first-char,omitempty"`
 	LastChar    int         `json:"last-char,omitempty"`
 	BoundingBox BoundingBox `json:"bounding-box,omitempty"`
-	Items       []Item      `json:"item,omitempty"`
+	Candidates  []string    `json:"candidates,omitempty"`
+	Items       []Item      `json:"items,omitempty"`
 }
 
 type Item struct {
@@ -32,6 +43,24 @@ type Item struct {
 	BoundingBox     BoundingBox `json:"bounding-box"`
 }
 
+type Char struct {
+	Label       string      `json:"label"`
+	Word        int         `json:"word"`
+	Grid        []Point     `json:"grid"`
+	BoundingBox BoundingBox `json:"bounding-box,omitempty"`
+	Items       []Item      `json:"items,omitempty"`
+}
+
+type Point struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+type Linebreak struct {
+	Line int `json:"line"`
+}
+
+// Coordinates are in **millimeters**
 type BoundingBox struct {
 	X      float64 `json:"x"`
 	Y      float64 `json:"y"`

@@ -1,17 +1,17 @@
 package main
 
 import (
-	//	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/akeil/rmtool"
+	"github.com/akeil/rmtool/pkg/api"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
-	"github.com/akeil/rmtool"
-	"github.com/akeil/rmtool/pkg/api"
 
 	"github.com/akeil/rescript"
 )
@@ -20,6 +20,7 @@ const (
 	checkmark = "\u2713"
 	crossmark = "\u2717"
 	ellipsis  = "\u2026"
+	dstStdout = "-"
 )
 
 var langs = map[string]rescript.LanguageCode{
@@ -32,26 +33,26 @@ func main() {
 	app.HelpFlag.Short('h')
 
 	var (
-		name = app.Arg("name", "Name of the notebook to convert").Required().String()
-		dst  = app.Arg("dir", "Directory for output document").Default(".").String()
-		// TODO: format
-		lang = app.Flag("lang", "Language of the notebook").Short('l').Default("en").String()
+		name   = app.Arg("name", "Name of the notebook to convert").Required().String()
+		dst    = app.Flag("output", "Directory for output document, \"-\" for STDOUT").Short('o').Default(".").String()
+		format = app.Flag("format", "Output format").Short('f').Default("txt").Enum("txt", "md")
+		lang   = app.Flag("lang", "Language of the notebook").Short('l').Default("en").String()
 	)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	rmtool.SetLogLevel("error")
 
-	err := run(*name, *dst, *lang)
+	err := run(*name, *dst, *lang, *format)
 	if err != nil {
-		fmt.Printf("%v Error: %v\n", crossmark, err)
+		message("%v Error: %v", crossmark, err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("%v Done.\n", checkmark)
+	message("%v Done.", checkmark)
 }
 
-func run(name, dst, lang string) error {
+func run(name, dst, lang, format string) error {
 	lc, ok := langs[lang]
 	if !ok {
 		return fmt.Errorf("invalid language %q", lang)
@@ -78,6 +79,10 @@ func run(name, dst, lang string) error {
 	root := rmtool.BuildTree(items)
 	root = root.Filtered(rmtool.IsDocument, rmtool.MatchName(name))
 
+	cmp := selectComposer(format)
+
+	pipeline := rescript.BuildPipeline(rescript.Dehyphenate)
+
 	// do recognition for each matching document
 	var group errgroup.Group
 	root.Walk(func(n *rmtool.Node) error {
@@ -86,30 +91,47 @@ func run(name, dst, lang string) error {
 		}
 
 		group.Go(func() error {
-			fmt.Printf("%v download notebook %q\n", ellipsis, n.Name())
+			message("%v download notebook %q", ellipsis, n.Name())
 			doc, err := rmtool.ReadDocument(r, n)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("%v recognize handwriting for %q\n", ellipsis, n.Name())
+			message("%v recognize handwriting (%v) for %q", ellipsis, lang, n.Name())
 			results, err := rec.Recognize(doc, lc)
 			if err != nil {
 				return err
 			}
 
-			path := filepath.Join(dst, doc.Name()+".md")
-			f, err := os.Create(path)
-			if err != nil {
-				return nil
+			for k, node := range results {
+				results[k] = pipeline(node)
 			}
-			defer f.Close()
 
-			err = rescript.ComposeDocument(f, doc, results)
+			var w io.Writer
+			var path string
+			if dst == dstStdout {
+				w = os.Stdout
+				path = "STDOUT"
+			} else {
+				path = filepath.Join(dst, doc.Name()+"."+format)
+				f, err := os.Create(path)
+				if err != nil {
+					return nil
+				}
+				defer f.Close()
+				w = f
+			}
+
+			m := rescript.Metadata{
+				Title: doc.Name(),
+				PageIDs: doc.Pages(),
+			}
+
+			err = cmp(w, m, results)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%v write %q to %q\n", checkmark, n.Name(), path)
+			message("%v write result to %q", checkmark, path)
 			return nil
 		})
 		return nil
@@ -158,10 +180,21 @@ func register(s settings, c *api.Client) error {
 func readInput(msg string) (string, error) {
 	var reply string
 
-	fmt.Printf("%v: \n", msg)
+	message("%v: ", msg)
 	_, err := fmt.Scanf("%s", &reply)
 
 	return reply, err
+}
+
+func selectComposer(t string) rescript.ComposeFunc {
+	switch t {
+	case "txt":
+		return rescript.NewPlaintextComposer()
+	case "md":
+		return rescript.NewMarkdownComposer()
+	default:
+		return rescript.NewPlaintextComposer()
+	}
 }
 
 func loadToken(path string) (string, error) {
@@ -187,6 +220,12 @@ func saveToken(path, token string) error {
 
 	_, err = f.Write([]byte(token))
 	return err
+}
+
+func message(s string, params ...interface{}) {
+	msg := fmt.Sprintf(s, params...)
+	msg = msg + "\n"
+	os.Stderr.WriteString(msg)
 }
 
 type settings struct {

@@ -40,9 +40,9 @@ func NewRecognizer(appKey, hmacKey, cacheDir string) *Recognizer {
 
 // Recognize performs handwriting recognition on all pages of the given document.
 // It resturns a map of page-IDs and recognition results.
-func (r *Recognizer) Recognize(doc *rmtool.Document, l LanguageCode) (map[string]Result, error) {
+func (r *Recognizer) Recognize(doc *rmtool.Document, l LanguageCode) (map[string]*Node, error) {
 	var resultsMx sync.Mutex
-	results := make(map[string]Result)
+	results := make(map[string]*Node)
 
 	var group errgroup.Group
 	for _, p := range doc.Pages() {
@@ -57,7 +57,7 @@ func (r *Recognizer) Recognize(doc *rmtool.Document, l LanguageCode) (map[string
 				return err
 			}
 			resultsMx.Lock()
-			results[pageID] = res
+			results[pageID] = toTokens(res)
 			resultsMx.Unlock()
 			return nil
 		})
@@ -73,8 +73,11 @@ func (r *Recognizer) Recognize(doc *rmtool.Document, l LanguageCode) (map[string
 
 func (r *Recognizer) recognizeDrawing(d *lines.Drawing, l LanguageCode) (Result, error) {
 	groups := make([]StrokeGroup, len(d.Layers))
+	t := int64(0)
 	for i, l := range d.Layers {
-		groups[i] = ConvertLayer(l)
+		g, tx := ConvertLayer(t, l)
+		t = tx
+		groups[i] = g
 	}
 
 	req := prepareRequest(l)
@@ -153,7 +156,11 @@ func prepareRequest(l LanguageCode) Request {
 	req := NewRequest()
 	req.Width = lines.MaxWidth
 	req.Height = lines.MaxHeight
-	req.Configuration = NewConfiguration(l, true, true, true)
+	guides := false // recommended to turn off in Offscreen usage
+	bbox := true
+	chars := false
+	words := true
+	req.Configuration = NewConfiguration(l, guides, bbox, chars, words)
 
 	return req
 }
@@ -162,4 +169,24 @@ func cacheKey(req Request) (string, error) {
 	cs := sha1.New()
 	req.checksum(cs)
 	return hex.EncodeToString(cs.Sum(nil)), nil
+}
+
+func toTokens(r Result) *Node {
+	// this assumes the the MmyScript "words" are exactly the same concept
+	// as our "tokens".
+	// Seems to be the case, AFAIK
+	var head *Node
+	var tail *Node
+	var curr *Node
+	for _, w := range r.Words {
+		curr = NewNode(NewToken(w.Label))
+		if head != nil {
+			head.InsertAfter(curr)
+			head = curr
+		} else {
+			head = curr
+			tail = curr
+		}
+	}
+	return tail
 }
