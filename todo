@@ -1,9 +1,3 @@
-Different output formats:
-
-- plain text
-- markdown
-- restructured text?
-
 For markdown, attempt to "improve" the output:
 
 - add headings (from text size in drawing)

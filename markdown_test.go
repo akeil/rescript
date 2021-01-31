@@ -28,11 +28,24 @@ func TestMarkdownPage(t *testing.T) {
 	append(node, "\n")
 	append(node, "newline")
 
-	err := markdownPage(&buf, 2, node)
+	node1 := NewNode(NewToken("second page"))
+
+	m := Metadata{
+		Title:   "My Title",
+		PageIDs: []string{"page0", "page1"},
+	}
+
+	nodes := map[string]*Node{
+		"page0": node,
+		"page1": node1,
+	}
+
+	c := NewMarkdownComposer()
+	err := c(&buf, m, nodes)
 	assert.Nil(err)
 
 	s := string(buf.Bytes())
-	expected := "**Page 3**\n\nfoo bar baz\nnewline\n\n---\n\n"
+	expected := "# My Title\n\n**Page 1**\n\nfoo bar baz\nnewline\n\n---\n\n**Page 2**\n\nsecond page\n"
 	assert.Equal(expected, s)
 }
 

@@ -26,6 +26,14 @@ func composeMarkdown(w io.Writer, m Metadata, r map[string]*Node) error {
 	sw.WriteString(fmt.Sprintf("# %v\n\n", m.Title))
 
 	for i, pageID := range m.PageIDs {
+		// thematic break after each page but the last
+		if i != 0 {
+			_, err = sw.WriteString("\n\n---\n\n")
+			if err != nil {
+				return err
+			}
+		}
+
 		tail, ok := r[pageID]
 		if ok {
 			err = markdownPage(sw, i, tail)
@@ -66,13 +74,6 @@ func markdownPage(sw io.StringWriter, idx int, n *Node) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	// thematic break after each page
-	// TODO: not after the last page
-	_, err = sw.WriteString("\n\n---\n\n")
-	if err != nil {
-		return err
 	}
 
 	return nil

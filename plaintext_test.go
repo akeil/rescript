@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPlaintextPage(t *testing.T) {
+func TestComposePlaintext(t *testing.T) {
 	assert := assert.New(t)
 
 	var buf bytes.Buffer
@@ -29,11 +29,24 @@ func TestPlaintextPage(t *testing.T) {
 	append(node, "\n")
 	append(node, "newline")
 
-	err := plaintextPage(&buf, 2, node)
+	node1 := NewNode(NewToken("second page"))
+
+	m := Metadata{
+		Title:   "My Title",
+		PageIDs: []string{"page0", "page1"},
+	}
+
+	nodes := map[string]*Node{
+		"page0": node,
+		"page1": node1,
+	}
+
+	c := NewPlaintextComposer()
+	err := c(&buf, m, nodes)
 	assert.Nil(err)
 
 	s := string(buf.Bytes())
-	expected := "\n[Page 3]\n\nfoo bar baz\nnewline\n"
+	expected := "MY TITLE\n\n[Page 1]\n\nfoo bar baz\nnewline\n\n[Page 2]\n\nsecond page\n"
 	assert.Equal(expected, s)
 }
 

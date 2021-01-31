@@ -37,12 +37,6 @@ func composePlain(w io.Writer, m Metadata, r map[string]*Node) error {
 		// TODO what should we do with pages w/o results?
 	}
 
-	// End the document with a newline
-	_, err = sw.WriteString("\n")
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
