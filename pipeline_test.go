@@ -8,113 +8,97 @@ import (
 
 func TestDehyphenate(t *testing.T) {
 	assert := assert.New(t)
-	var ta []*Token
-	var tb []*Token
+	var ta *Node
+	var tb *Node
+
+	head := func(n *Node) *Node {
+		nn := n
+		for node := n; node != nil; node = node.Next() {
+			nn = node
+		}
+		return nn
+	}
+
+	str := func(n *Node) string {
+		return n.Token().String()
+	}
 
 	// basic, unchanged
-	ta = []*Token{
-		NewToken("foo"),
-		NewToken(" "),
-		NewToken("bar"),
-	}
+	ta = buildSampleList("foo", " ", "bar")
 	tb = Dehyphenate(ta)
-	assert.Equal(len(ta), len(tb))
+	assert.Equal(str(ta), str(tb))
+	assert.Equal(str(head(ta)), str(head(tb)))
 
 	// hyphenated word should be merged
 	//
 	// foo-
 	// bar
-	ta = []*Token{
-		NewToken("foo"),
-		NewToken("-"),
-		NewToken("\n"),
-		NewToken("bar"),
-	}
+	ta = buildSampleList("foo", "-", "\n", "bar")
 	tb = Dehyphenate(ta)
-	assert.Equal(1, len(tb), "Hyphenated words should be merged")
+	assert.Equal("foobar", str(tb), "Hyphenated words should be merged")
 
 	// hyphenated word should be merged
 	//
 	// foo- bar
-	ta = []*Token{
-		NewToken("foo"),
-		NewToken("-"),
-		NewToken(" "),
-		NewToken("bar"),
-	}
+	ta = buildSampleList("foo", "-", " ", "bar")
 	tb = Dehyphenate(ta)
-	assert.Equal(1, len(tb), "Hyphenated words should be merged")
-	assert.Equal("foobar", tb[0].String(), "Hyphenated words should be merged")
+	assert.Equal("foobar", str(tb), "Hyphenated words should be merged")
 
 	// subsequent hyphenations should also be merged
 	//
 	// foo- bar
-	ta = []*Token{
-		NewToken("foo"),
-		NewToken("-"),
-		NewToken(" "),
-		NewToken("bar"),
-		NewToken(" "),
-		NewToken("abc"),
-		NewToken("-"),
-		NewToken(" "),
-		NewToken("def"),
-	}
+	ta = buildSampleList("foo", "-", " ", "bar", " ", "abc", "-", " ", "def")
 	tb = Dehyphenate(ta)
-	assert.Equal(3, len(tb), "Hyphenated words should be merged")
-	assert.Equal("foobar", tb[0].String(), "Hyphenated words should be merged")
-	assert.Equal("abcdef", tb[2].String(), "Hyphenated words should be merged")
+	assert.Equal("foobar", str(tb), "Hyphenated words should be merged")
+	assert.Equal(" ", str(tb.Next()), "Hyphenated words should be merged")
+	assert.Equal("abcdef", str(tb.Next().Next()), "Hyphenated words should be merged")
 
 	// hyphenated word should be merged
 	//
 	// foo-bar
-	ta = []*Token{
-		NewToken("foo"),
-		NewToken("-"),
-		NewToken("bar"),
-	}
+	ta = buildSampleList("foo", "-", "bar")
 	tb = Dehyphenate(ta)
-	assert.Equal(1, len(tb), "Hyphenated words should be merged")
-	assert.Equal("foobar", tb[0].String(), "Hyphenated words should be merged")
+	assert.Equal("foobar", str(tb), "Hyphenated words should be merged")
 
 	// two words separated by dash should NOT be merged
 	//
 	// foo - bar
-	ta = []*Token{
-		NewToken("foo"),
-		NewToken(" "),
-		NewToken("-"),
-		NewToken(" "),
-		NewToken("bar"),
-	}
+	ta = buildSampleList("foo", " ", "-", " ", "bar")
 	tb = Dehyphenate(ta)
-	assert.Equal(len(ta), len(tb), "Words separated by dash should NOT be merged")
+	assert.Equal("foo", str(tb), "Words separated by dash should NOT be merged")
+	assert.Equal("bar", str(head(tb)), "Words separated by dash should NOT be merged")
 
 	// List elements are not hyphenated words
 	//
 	// foo
 	// - item
-	ta = []*Token{
-		NewToken("foo"),
-		NewToken("\n"),
-		NewToken("-"),
-		NewToken(" "),
-		NewToken("item"),
-	}
+	ta = buildSampleList("foo", "\n", "-", " ", "item")
 	tb = Dehyphenate(ta)
-	assert.Equal(len(ta), len(tb), "List items should NOT be merged")
+	assert.Equal("foo", str(tb), "Words separated by dash should NOT be merged")
+	assert.Equal("item", str(head(tb)), "Words separated by dash should NOT be merged")
 
 	// List elements are not hyphenated words (even if the list is not properly recognized)
 	//
 	// foo
 	// -item
-	ta = []*Token{
-		NewToken("foo"),
-		NewToken("\n"),
-		NewToken("-"),
-		NewToken("item"),
-	}
+	ta = buildSampleList("foo", "\n", "-", "item")
 	tb = Dehyphenate(ta)
-	assert.Equal(len(ta), len(tb), "List items should NOT be merged")
+	assert.Equal("foo", str(tb), "Words separated by dash should NOT be merged")
+	assert.Equal("item", str(head(tb)), "Words separated by dash should NOT be merged")
+}
 
+func buildSampleList(s ...string) *Node {
+	var tail *Node
+	var head *Node
+	for _, w := range s {
+		n := NewNode(NewToken(w))
+		if head != nil {
+			head.InsertAfter(n)
+		} else {
+			head = n
+			tail = n
+		}
+	}
+
+	return tail
 }
