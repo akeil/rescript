@@ -4,68 +4,84 @@ package rescript
 //
 // The output is the modified set of tokens. A PipelineFunc may change, remove
 // or insert tokens.
-type PipelineFunc func(t []*Token) []*Token
+type PipelineFunc func(n *Node) *Node
 
 // BuildPipeline combines several pipeline functions into one.
 func BuildPipeline(p ...PipelineFunc) PipelineFunc {
-	return func(t []*Token) []*Token {
+	return func(n *Node) *Node {
 		for _, f := range p {
-			t = f(t)
+			n = f(n)
 		}
-		return t
+		return n
 	}
 }
 
 // Dehyphenate merges words that are separated by a hyphen.
-func Dehyphenate(t []*Token) []*Token {
-	result := make([]*Token, len(t))
+func Dehyphenate(n *Node) *Node {
 	count := 0
-	drop := 0
+	state := 0
+	var t *Token
 
-	stage := 0
-	for _, token := range t {
-		result[count] = token
-		count++
-		switch stage {
+	for node := n; node != nil; node = node.Next() {
+		t = node.Token()
+		switch state {
 		case 0:
-			if token.IsWord() {
-				stage = 1
-				drop = 1
+			if t.IsWord() {
+				state = 1
+				count = 1
 			}
 		case 1:
-			if token.IsDash() {
-				stage = 2
-				drop++
+			if t.IsDash() {
+				state = 2
+				count++
 			} else {
-				stage = 0
+				state = 0
+				count = 0
 			}
 		case 2:
-			if token.IsWhitespace() {
-				stage = 2 // same
-				drop++
-			} else if token.IsWord() {
-				stage = 3
-				drop++
+			if t.IsWhitespace() {
+				state = 2 // same
+				count++
+			} else if t.IsWord() {
+				state = 3
 			} else {
-				stage = 0
+				state = 0
+				count = 0
 			}
 		}
-		if stage == 3 {
-			// lets go back and remove some items from the list
-			s := ""
-			for i := 0; i < drop; i++ {
-				idx := count - drop + i
-				pt := result[idx]
-				if pt.IsWord() {
-					s += pt.String()
+
+		// We have found a hyphenated word if we have reached state = 3
+		//
+		// Current node is the last part of the word
+		// We need to merge `count` preceeding nodes
+		//
+		// We update the start node (not the current)
+		// because the start node might be the return value of this function
+		if state == 3 {
+			// go back to the start of the hyphenated word
+			start := node.Behind(count)
+			// this will become the merged word
+			s := start.Token().String()
+
+			// drop `count` following nodes
+			for i := 0; i < count; i++ {
+				next := start.Next()
+				if next.Token().IsWord() {
+					s += next.Token().String()
 				}
+				next.Remove()
 			}
-			count -= drop
-			result[count] = NewToken(s)
-			count++
-			stage = 0
-			drop = 0
+
+			// make the merged word part of the list
+			start.Update(NewToken(s))
+
+			// "fix" the iterator - we have dropped the current node, reset it
+			node = start
+			// reset state
+			count = 0
+			state = 0
 		}
 	}
-	return result[0:count]
+
+	return n
 }

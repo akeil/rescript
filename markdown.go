@@ -20,7 +20,7 @@ func (sw stringWriter) WriteString(s string) (int, error) {
 	return sw.Write([]byte(s))
 }
 
-func composeMarkdown(w io.Writer, doc *rmtool.Document, r map[string][]*Token) error {
+func composeMarkdown(w io.Writer, doc *rmtool.Document, r map[string]*Node) error {
 	var err error
 	sw := stringWriter{w}
 
@@ -28,9 +28,9 @@ func composeMarkdown(w io.Writer, doc *rmtool.Document, r map[string][]*Token) e
 	sw.WriteString(fmt.Sprintf("# %v\n\n", doc.Name()))
 
 	for i, pageID := range doc.Pages() {
-		res, ok := r[pageID]
+		tail, ok := r[pageID]
 		if ok {
-			err = markdownPage(sw, i, res)
+			err = markdownPage(sw, i, tail)
 			if err != nil {
 				return err
 			}
@@ -56,15 +56,14 @@ func composeMarkdown(w io.Writer, doc *rmtool.Document, r map[string][]*Token) e
 // add a newline before the *first* and after the *last* line
 // of consecutive list entries
 
-func markdownPage(w io.StringWriter, idx int, tokens []*Token) error {
+func markdownPage(w io.StringWriter, idx int, n *Node) error {
 	var err error
 
 	w.WriteString(fmt.Sprintf("**Page %d**\n\n", idx+1))
 
-	for _, t := range tokens {
+	for node := n; node != nil; node = node.Next() {
 		// TODO: we might attempt to "guess" markdown here,
-
-		_, err = w.WriteString(t.String())
+		_, err = w.WriteString(node.Token().String())
 		if err != nil {
 			return err
 		}

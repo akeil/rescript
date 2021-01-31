@@ -103,8 +103,8 @@ func run(name, dst, lang, format string) error {
 				return err
 			}
 
-			for k, tokens := range results {
-				results[k] = pipeline(tokens)
+			for k, node := range results {
+				results[k] = pipeline(node)
 			}
 
 			var w io.Writer

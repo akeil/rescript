@@ -14,7 +14,7 @@ func NewPlaintextComposer() ComposeFunc {
 	return composePlain
 }
 
-func composePlain(w io.Writer, doc *rmtool.Document, r map[string][]*Token) error {
+func composePlain(w io.Writer, doc *rmtool.Document, r map[string]*Node) error {
 	var err error
 	sw := stringWriter{w}
 
@@ -29,9 +29,9 @@ func composePlain(w io.Writer, doc *rmtool.Document, r map[string][]*Token) erro
 
 	// Output the text body from all pages
 	for i, pageID := range doc.Pages() {
-		res, ok := r[pageID]
+		tail, ok := r[pageID]
 		if ok {
-			err = plainPage(sw, i, res)
+			err = plainPage(sw, i, tail)
 			if err != nil {
 				return err
 			}
@@ -48,13 +48,13 @@ func composePlain(w io.Writer, doc *rmtool.Document, r map[string][]*Token) erro
 	return nil
 }
 
-func plainPage(sw io.StringWriter, idx int, tokens []*Token) error {
+func plainPage(sw io.StringWriter, idx int, n *Node) error {
 	var err error
 
 	sw.WriteString(fmt.Sprintf("\n[Page %d]\n\n", idx+1))
 
-	for _, t := range tokens {
-		_, err = sw.WriteString(t.String())
+	for node := n; node != nil; node = node.Next() {
+		_, err = sw.WriteString(node.Token().String())
 		if err != nil {
 			return err
 		}

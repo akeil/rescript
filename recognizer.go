@@ -40,9 +40,9 @@ func NewRecognizer(appKey, hmacKey, cacheDir string) *Recognizer {
 
 // Recognize performs handwriting recognition on all pages of the given document.
 // It resturns a map of page-IDs and recognition results.
-func (r *Recognizer) Recognize(doc *rmtool.Document, l LanguageCode) (map[string][]*Token, error) {
+func (r *Recognizer) Recognize(doc *rmtool.Document, l LanguageCode) (map[string]*Node, error) {
 	var resultsMx sync.Mutex
-	results := make(map[string][]*Token)
+	results := make(map[string]*Node)
 
 	var group errgroup.Group
 	for _, p := range doc.Pages() {
@@ -171,13 +171,22 @@ func cacheKey(req Request) (string, error) {
 	return hex.EncodeToString(cs.Sum(nil)), nil
 }
 
-func toTokens(r Result) []*Token {
+func toTokens(r Result) *Node {
 	// this assumes the the MmyScript "words" are exactly the same concept
 	// as our "tokens".
 	// Seems to be the case, AFAIK
-	tokens := make([]*Token, len(r.Words))
-	for i, w := range r.Words {
-		tokens[i] = NewToken(w.Label)
+	var head *Node
+	var tail *Node
+	var curr *Node
+	for _, w := range r.Words {
+		curr = NewNode(NewToken(w.Label))
+		if head != nil {
+			head.InsertAfter(curr)
+			head = curr
+		} else {
+			head = curr
+			tail = curr
+		}
 	}
-	return tokens
+	return tail
 }
