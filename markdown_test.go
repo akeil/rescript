@@ -35,3 +35,13 @@ func TestMarkdownPage(t *testing.T) {
 	expected := "**Page 3**\n\nfoo bar baz\nnewline\n\n---\n\n"
 	assert.Equal(expected, s)
 }
+
+func TestMarkdownError(t *testing.T) {
+	assert := assert.New(t)
+
+	node := NewNode(NewToken("foo"))
+	w := failWriter{}
+
+	err := markdownPage(w, 2, node)
+	assert.Error(err)
+}

@@ -21,6 +21,7 @@ support different backends for HWR service
 
 Add Docstrings for all public functions
 
+keep rmtool.Document out of ComposeFunc
 tests for composers
 
 Fix dehyphenate
