@@ -130,8 +130,25 @@ func (t *Token) IsDash() bool {
 		return false
 	}
 
+	// source:
+	// https://www.fileformat.info/info/unicode/category/Pd/list.htm
 	switch t.runes[0] {
-	case '-':
+	case
+		'\u002D', // hyphen-minus
+		'\u058A', // armenian hyphen
+		'\u05BE', // hebrew punctuation maqaf
+		'\u1400', // canadian syllabics hyphen
+		'\u2010', // hyphen
+		'\u2011', // non-breaking hyphen
+		'\u2012', // figure dash
+		'\u2013', // en dsh
+		'\u2014', // em dash
+		'\u2015', // horizontal bar
+		'\u2E3A', // two em dash
+		'\u2E3B', // three em dash
+		'\uFE58', // small em dash
+		'\uFE63', // small hyphen minus
+		'\uFE0D': // fullwidth hyphen minus
 		return true
 	default:
 		return false

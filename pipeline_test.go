@@ -95,9 +95,11 @@ func buildSampleList(s ...string) *Node {
 		if head != nil {
 			head.InsertAfter(n)
 		} else {
-			head = n
 			tail = n
 		}
+		if tail == nil {
+		}
+		head = n
 	}
 
 	return tail

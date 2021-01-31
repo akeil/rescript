@@ -39,4 +39,7 @@ func TestTokenIs(t *testing.T) {
 
 	// two words separated by space should not occur (= three separate tpkens)
 	assert.False(NewToken("foo bar").IsWord())
+
+	assert.True(NewToken("-").IsDash())
+	assert.False(NewToken("_").IsDash())
 }
