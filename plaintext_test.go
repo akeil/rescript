@@ -45,9 +45,8 @@ func TestComposePlaintext(t *testing.T) {
 	err := c(&buf, m, nodes)
 	assert.Nil(err)
 
-	s := string(buf.Bytes())
 	expected := "MY TITLE\n\n[Page 1]\n\nfoo bar baz\nnewline\n\n[Page 2]\n\nsecond page\n"
-	assert.Equal(expected, s)
+	assert.Equal(expected, buf.String())
 }
 
 func TestPlaintextError(t *testing.T) {

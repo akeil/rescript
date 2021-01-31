@@ -44,9 +44,8 @@ func TestMarkdownPage(t *testing.T) {
 	err := c(&buf, m, nodes)
 	assert.Nil(err)
 
-	s := string(buf.Bytes())
 	expected := "# My Title\n\n**Page 1**\n\nfoo bar baz\nnewline\n\n---\n\n**Page 2**\n\nsecond page\n"
-	assert.Equal(expected, s)
+	assert.Equal(expected, buf.String())
 }
 
 func TestMarkdownError(t *testing.T) {

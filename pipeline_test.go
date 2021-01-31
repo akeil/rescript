@@ -97,8 +97,6 @@ func buildSampleList(s ...string) *Node {
 		} else {
 			tail = n
 		}
-		if tail == nil {
-		}
 		head = n
 	}
 
