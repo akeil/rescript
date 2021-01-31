@@ -122,7 +122,12 @@ func run(name, dst, lang, format string) error {
 				w = f
 			}
 
-			err = cmp(w, doc, results)
+			m := rescript.Metadata{
+				Title: doc.Name(),
+				PageIDs: doc.Pages(),
+			}
+
+			err = cmp(w, m, results)
 			if err != nil {
 				return err
 			}

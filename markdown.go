@@ -3,8 +3,6 @@ package rescript
 import (
 	"fmt"
 	"io"
-
-	"github.com/akeil/rmtool"
 )
 
 // NewMarkdownComposer creates a new composer which generates output in markdown format.
@@ -20,14 +18,14 @@ func (sw stringWriter) WriteString(s string) (int, error) {
 	return sw.Write([]byte(s))
 }
 
-func composeMarkdown(w io.Writer, doc *rmtool.Document, r map[string]*Node) error {
+func composeMarkdown(w io.Writer, m Metadata, r map[string]*Node) error {
 	var err error
 	sw := stringWriter{w}
 
 	// TODO: we might write a yaml frontmatter here
-	sw.WriteString(fmt.Sprintf("# %v\n\n", doc.Name()))
+	sw.WriteString(fmt.Sprintf("# %v\n\n", m.Title))
 
-	for i, pageID := range doc.Pages() {
+	for i, pageID := range m.PageIDs {
 		tail, ok := r[pageID]
 		if ok {
 			err = markdownPage(sw, i, tail)
