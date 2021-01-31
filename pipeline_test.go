@@ -46,6 +46,25 @@ func TestDehyphenate(t *testing.T) {
 	assert.Equal(1, len(tb), "Hyphenated words should be merged")
 	assert.Equal("foobar", tb[0].String(), "Hyphenated words should be merged")
 
+	// subsequent hyphenations should also be merged
+	//
+	// foo- bar
+	ta = []*Token{
+		NewToken("foo"),
+		NewToken("-"),
+		NewToken(" "),
+		NewToken("bar"),
+		NewToken(" "),
+		NewToken("abc"),
+		NewToken("-"),
+		NewToken(" "),
+		NewToken("def"),
+	}
+	tb = Dehyphenate(ta)
+	assert.Equal(3, len(tb), "Hyphenated words should be merged")
+	assert.Equal("foobar", tb[0].String(), "Hyphenated words should be merged")
+	assert.Equal("abcdef", tb[2].String(), "Hyphenated words should be merged")
+
 	// hyphenated word should be merged
 	//
 	// foo-bar
