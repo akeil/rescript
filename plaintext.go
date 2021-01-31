@@ -31,7 +31,7 @@ func composePlain(w io.Writer, doc *rmtool.Document, r map[string]*Node) error {
 	for i, pageID := range doc.Pages() {
 		tail, ok := r[pageID]
 		if ok {
-			err = plainPage(sw, i, tail)
+			err = plaintextPage(sw, i, tail)
 			if err != nil {
 				return err
 			}
@@ -48,10 +48,13 @@ func composePlain(w io.Writer, doc *rmtool.Document, r map[string]*Node) error {
 	return nil
 }
 
-func plainPage(sw io.StringWriter, idx int, n *Node) error {
+func plaintextPage(sw io.StringWriter, idx int, n *Node) error {
 	var err error
 
-	sw.WriteString(fmt.Sprintf("\n[Page %d]\n\n", idx+1))
+	_, err = sw.WriteString(fmt.Sprintf("\n[Page %d]\n\n", idx+1))
+	if err != nil {
+		return err
+	}
 
 	for node := n; node != nil; node = node.Next() {
 		_, err = sw.WriteString(node.Token().String())
