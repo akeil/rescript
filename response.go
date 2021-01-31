@@ -16,7 +16,11 @@ type Result struct {
 	Linebreaks  []Linebreak `json:"linebreaks"`
 }
 
-// see:
+// Word is a single recognized "word", including whitespace or punctuation.
+//
+// The recognized content is held in the `Label`; concatenating all labesl
+// gives the full text.
+// See:
 // https://developer.myscript.com/docs/interactive-ink/1.4/reference/web/jiix/#word-object
 type Word struct {
 	Label       string      `json:"label"`

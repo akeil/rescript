@@ -16,6 +16,7 @@ type Token struct {
 	runes []rune
 }
 
+// NewToken creates a new token with the given content.
 func NewToken(s string) *Token {
 	return &Token{s, []rune(s)}
 }
@@ -78,6 +79,7 @@ func (t *Token) IsWhitespace() bool {
 	}
 }
 
+// IsNewline tells if this token is a newline.
 func (t *Token) IsNewline() bool {
 	if !t.isSingle() {
 		return false
@@ -107,10 +109,15 @@ func (t *Token) StartsUpper() bool {
 	return unicode.IsUpper(t.runes[0])
 }
 
+// IsPunctuation tells if this token belongs to the punctuation group.
 func (t *Token) IsPunctuation() bool {
 	return t.isSingle() && unicode.IsPunct(t.runes[0])
 }
 
+// IsWord tells if this token is a "word".
+//
+// This is determined by looking at the recongnized characters. This may still
+// be a poorly recognized word.
 func (t *Token) IsWord() bool {
 	// TODO: not sure is this holds
 	// "words" only consist of letters - right?
@@ -125,6 +132,7 @@ func (t *Token) IsWord() bool {
 	return true
 }
 
+// IsDash tells if this token is a dash ("-"), including several unicode variants.
 func (t *Token) IsDash() bool {
 	if !t.isSingle() {
 		return false
