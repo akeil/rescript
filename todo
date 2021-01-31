@@ -1,9 +1,3 @@
-Different output formats:
-
-- plain text
-- markdown
-- restructured text?
-
 For markdown, attempt to "improve" the output:
 
 - add headings (from text size in drawing)
@@ -19,9 +13,6 @@ or section (BBox) from a page
 Later
 support different backends for HWR service
 
-
 Add Docstrings for all public functions
 
-Implement Linked List for Tokens
-
-tests for composers
+Fix dehyphenate
