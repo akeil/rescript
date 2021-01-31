@@ -64,6 +64,29 @@ func TestInsert(t *testing.T) {
 	assert.Equal("b", end.Prev().Token().String())
 }
 
+func TestAhead(t *testing.T) {
+	assert := assert.New(t)
+
+	start, middle, end := sampleList()
+
+	assert.Equal(start.Ahead(1).Token().String(), middle.Token().String())
+	assert.Equal(start.Ahead(2).Token().String(), end.Token().String())
+	assert.Nil(start.Ahead(3))
+	assert.Nil(start.Ahead(4))
+	assert.Nil(start.Behind(1))
+}
+
+func TestBehind(t *testing.T) {
+	assert := assert.New(t)
+
+	start, middle, end := sampleList()
+	assert.Equal(end.Behind(1).Token().String(), middle.Token().String())
+	assert.Equal(end.Behind(2).Token().String(), start.Token().String())
+	assert.Nil(end.Behind(3))
+	assert.Nil(end.Behind(4))
+	assert.Nil(end.Ahead(1))
+}
+
 func TestBuildList(t *testing.T) {
 	assert := assert.New(t)
 

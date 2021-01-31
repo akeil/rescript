@@ -16,6 +16,7 @@ func NewNode(t *Token) *Node {
 
 // BuildLinkedList creates a doubly linked list from the given list of tokens.
 // Returns the TAIL (first entry) of the list.
+// TODO: unused - remove
 func BuildLinkedList(t []*Token) *Node {
 	var head *Node
 	var tail *Node
@@ -46,6 +47,30 @@ func (n *Node) Next() *Node {
 // Prev returns the revious node or nil if this is the TAIL.
 func (n *Node) Prev() *Node {
 	return n.prev
+}
+
+// Ahead returns the node `count` steps ahead of this one (or nil).
+func (n *Node) Ahead(count int) *Node {
+	rv := n
+	for i := 0; i < count; i++ {
+		if rv.IsHead() {
+			return nil
+		}
+		rv = rv.Next()
+	}
+	return rv
+}
+
+// Behind returns the node `count` steps behind of this one (or nil).
+func (n *Node) Behind(count int) *Node {
+	rv := n
+	for i := 0; i < count; i++ {
+		if rv.IsTail() {
+			return nil
+		}
+		rv = rv.Prev()
+	}
+	return rv
 }
 
 // IsHead tells if this is the last node in the list.
