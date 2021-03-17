@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -123,7 +122,7 @@ func run(name, dst, lang, format string) error {
 			}
 
 			m := rescript.Metadata{
-				Title: doc.Name(),
+				Title:   doc.Name(),
 				PageIDs: doc.Pages(),
 			}
 
@@ -203,7 +202,7 @@ func loadToken(path string) (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	d, err := ioutil.ReadAll(f)
+	d, err := io.ReadAll(f)
 	if err != nil {
 		return "", err
 	}
